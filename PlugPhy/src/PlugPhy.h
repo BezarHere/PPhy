@@ -27,6 +27,7 @@ namespace pphy
 	enum class ShapeType3D
 	{
 		Sphere,
+		Pyramid,
 		Box,
 		Plane,
 		Ray
@@ -93,8 +94,10 @@ namespace pphy
 
 		vector_type base;
 		vector_type head_extent;
-		float base_size;
+		vector_type::lower_rank base_size;
 	};
+	using Triangle = TPointy<Vector2>;
+	using Pyramid = TPointy<Vector3>;
 
 	struct Line
 	{
