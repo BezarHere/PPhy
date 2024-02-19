@@ -16,6 +16,7 @@ namespace pphy
 		using real_this_type = BaseVector2Template<_R, _R>;
 		using value_type = _T;
 		using real_type = _R;
+		using lower_rank = value_type;
 
 		constexpr inline BaseVector2Template(value_type xx, value_type yy) noexcept
 			: x{ xx }, y{ yy }
@@ -281,6 +282,7 @@ namespace pphy
 	{
 		using this_type = BaseVector3Template<_T>;
 		using value_type = _T;
+		using lower_rank = BaseVector2Template<_T>;
 
 		constexpr inline BaseVector3Template(value_type xx, value_type yy, value_type zz) noexcept
 			: x{ xx }, y{ yy }, z{ zz }
@@ -367,7 +369,7 @@ namespace pphy
 		}
 
 		inline constexpr this_type reflect(const this_type &plane_normal) const {
-			return value_type(2.0f) * plane_normal * this->dot(plane_normal) - *this;
+			return plane_normal * value_type( 2.0f ) * this->dot(plane_normal) - *this;
 		}
 
 		inline constexpr this_type bounce(const this_type &plane_normal) const {
@@ -511,6 +513,7 @@ namespace pphy
 		using base_type = BaseVector3Template<_T>;
 		using this_type = RealVector3Template<_T>;
 		using value_type = _T;
+		using lower_rank = BaseVector3Template<_T>;
 
 
 		constexpr inline RealVector3Template(value_type xx, value_type yy, value_type zz)
