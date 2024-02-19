@@ -74,23 +74,85 @@ namespace pphy
 	using Polygon3D = TPolygon<Vector3>;
 	using Polygon4D = TPolygon<Vector4>;
 
-	struct Circle
+	template <typename _VEC>
+	struct TRound
 	{
-	};
+		using vector_type = _VEC;
 
-	struct Triangle
+		vector_type center;
+		float radius;
+	};
+	using Circle = TRound<Vector2>;
+	using Sphere = TRound<Vector3>;
+	//using HyperSphere = TRound<Vector4>;
+
+	template <typename _VEC>
+	struct TPointy
 	{
-	};
+		using vector_type = _VEC;
 
+		vector_type base;
+		vector_type head_extent;
+		float base_size;
+	};
 
 	struct Line
 	{
+		using vector_type = Vector2;
+
+		vector_type origin;
+		vector_type direction;
+	};
+
+	template <typename _T>
+	struct TRay
+	{
+		using vector_type = _T;
+		
+		vector_type origin;
+		vector_type extent;
+	};
+	using Ray2D = TRay<Vector2>;
+	using Ray3D = TRay<Vector3>;
+	using Ray4D = TRay<Vector4>;
+		
+	struct Shape2D
+	{
+	public:
+		using vector_type = Vector2;
+		using shape_type_enum = ShapeType2D;
+
+
+	private:
+		shape_type_enum m_type;
+		union ShapeUnion2D
+		{
+			Polygon2D polygon;
+			Circle circle;
+			Triangle triangle;
+			Line line;
+			Ray2D ray;
+		} m_data;
+	};
+
+	struct Shape3D
+	{
+	public:
+		using vector_type = Vector3;
+		using shape_type_enum = ShapeType3D;
+
+
+	private:
+
+
 	};
 
 	struct ObjectState2D
 	{
 	public:
 		using vector_type = Vector2;
+		using shape_type = Shape2D;
+		using shape_type_enum = ShapeType2D;
 
 
 	};
@@ -99,6 +161,8 @@ namespace pphy
 	{
 	public:
 		using vector_type = Vector3;
+		using shape_type = Shape3D;
+		using shape_type_enum = ShapeType3D;
 
 	};
 
@@ -112,6 +176,7 @@ namespace pphy
 
 
 	private:
+		ObjectType m_type;
 		vector_type m_position;
 		real_t m_angle;
 		vector_type m_linear_velocity;
@@ -121,6 +186,7 @@ namespace pphy
 		this_type *m_parent;
 		std::vector<this_type *> m_children;
 
+		state_type::shape_type m_shape;
 		state_type m_state;
 	};
 	using Object2D = TObject<ObjectState2D>;
