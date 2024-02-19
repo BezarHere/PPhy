@@ -107,6 +107,15 @@ namespace pphy
 		vector_type direction;
 	};
 
+	struct Plane
+	{
+		using vector_type = Vector3;
+
+		vector_type origin;
+		vector_type normal;
+		vector_type::lower_rank size;
+	};
+
 	template <typename _T>
 	struct TRay
 	{
@@ -137,7 +146,7 @@ namespace pphy
 			Ray2D ray;
 		} m_data;
 	};
-
+		
 	struct Shape3D
 	{
 	public:
@@ -146,8 +155,15 @@ namespace pphy
 
 
 	private:
-
-
+		shape_type_enum m_type;
+		union ShapeUnion2D
+		{
+			Polygon3D polygon;
+			Sphere sphere;
+			Pyramid pyramid;
+			Plane plane;
+			Ray3D ray;
+		} m_data;
 	};
 
 	struct ObjectState2D
@@ -155,7 +171,6 @@ namespace pphy
 	public:
 		using vector_type = Vector2;
 		using shape_type = Shape2D;
-		using shape_type_enum = ShapeType2D;
 
 
 	};
@@ -165,7 +180,6 @@ namespace pphy
 	public:
 		using vector_type = Vector3;
 		using shape_type = Shape3D;
-		using shape_type_enum = ShapeType3D;
 
 	};
 
