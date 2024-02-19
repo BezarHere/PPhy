@@ -3,15 +3,9 @@
 
 namespace pphy
 {
-	//template<typename _VEC>
-	//TPolygon<_VEC>::vector_type TPolygon<_VEC>::get_center() const {
-	//	Vector2 v = {};
+	Shape2D::ShapeUnion2D::~ShapeUnion2D() {
+	}
 
-	//	for (const Vector2 &vp : m_points)
-	//	{
-	//		v += vp;
-	//	}
-
-	//	return v;
-	//}
+	Shape3D::ShapeUnion3D::~ShapeUnion3D() {
+	}
 }

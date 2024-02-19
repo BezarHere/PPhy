@@ -94,7 +94,7 @@ namespace pphy
 
 		vector_type base;
 		vector_type head_extent;
-		vector_type::lower_rank base_size;
+		typename vector_type::lower_rank base_size;
 	};
 	using Triangle = TPointy<Vector2>;
 	using Pyramid = TPointy<Vector3>;
@@ -139,6 +139,8 @@ namespace pphy
 		shape_type_enum m_type;
 		union ShapeUnion2D
 		{
+			~ShapeUnion2D();
+
 			Polygon2D polygon;
 			Circle circle;
 			Triangle triangle;
@@ -156,8 +158,10 @@ namespace pphy
 
 	private:
 		shape_type_enum m_type;
-		union ShapeUnion2D
+		union ShapeUnion3D
 		{
+			~ShapeUnion3D();
+
 			Polygon3D polygon;
 			Sphere sphere;
 			Pyramid pyramid;
@@ -188,7 +192,7 @@ namespace pphy
 	{
 	public:
 		using state_type = _STATE;
-		using vector_type = state_type::vector_type;
+		using vector_type = typename state_type::vector_type;
 		using this_type = TObject<_STATE>;
 
 
@@ -203,7 +207,7 @@ namespace pphy
 		this_type *m_parent;
 		std::vector<this_type *> m_children;
 
-		state_type::shape_type m_shape;
+		typename state_type::shape_type m_shape;
 		state_type m_state;
 	};
 	using Object2D = TObject<ObjectState2D>;
