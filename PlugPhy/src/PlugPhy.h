@@ -219,12 +219,17 @@ namespace pphy
 	public:
 		using object_type = _OBJ;
 
+		TSpace(size_t objcount);
+
 	private:
+
 		const size_t m_space_size;
 		std::unique_ptr<object_type[]> m_objects;
 	};
 	using Space2D = TSpace<Object2D>;
 	using Space3D = TSpace<Object3D>;
+
+	
 
 	
 
