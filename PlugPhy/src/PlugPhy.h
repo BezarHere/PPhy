@@ -15,7 +15,7 @@ namespace pphy
 {
 
 
-	enum class ObjectType2D
+	enum class ShapeType2D
 	{
 		Circle,
 		Triangle,
@@ -24,7 +24,7 @@ namespace pphy
 		Ray,
 	};
 
-	enum class ObjectType3D
+	enum class ShapeType3D
 	{
 		Sphere,
 		Box,
@@ -32,12 +32,22 @@ namespace pphy
 		Ray
 	};
 
+	enum class ObjectType
+	{
+		World, // <- backed static body
+		Terrain = World,
+		Static,
+		Charecter,
+		Rigid,
+		Soft
+	};
+
 	enum class Winding
 	{
-		// use: when the polygon is empty, it is not clockwise nor counter clockwise
-		None,
 		Clockwise,
-		CounterClockwise
+		CounterClockwise,
+		// use: when the polygon is empty, it is not clockwise nor counter clockwise
+		None = 0xffff,
 	};
 
 
@@ -63,6 +73,19 @@ namespace pphy
 	using Polygon2D = TPolygon<Vector2>;
 	using Polygon3D = TPolygon<Vector3>;
 	using Polygon4D = TPolygon<Vector4>;
+
+	struct Circle
+	{
+	};
+
+	struct Triangle
+	{
+	};
+
+
+	struct Line
+	{
+	};
 
 	struct ObjectState2D
 	{
