@@ -13,7 +13,10 @@ zahr abdullatif babker (C) 2024-2025
 
 namespace pphy
 {
-
+	typedef size_t index_t;
+	typedef size_t hash_t;
+	template <typename _T>
+	using Segment = std::pair<_T, _T>;
 
 	enum class ShapeType2D
 	{
@@ -35,7 +38,7 @@ namespace pphy
 
 	enum class ObjectType
 	{
-		World, // <- backed static body
+		World, // <- baked static body
 		Terrain = World,
 		Static,
 		Charecter,
@@ -51,6 +54,26 @@ namespace pphy
 		None = 0xffff,
 	};
 
+	enum ObjectFlags : uint16_t
+	{
+		ObjFlag_None = 0x0000,
+		ObjFlag_Clip = 0x0001,
+	};
+	using CollisionMask = uint32_t;
+
+	template <typename _VEC>
+	struct TFrame
+	{
+		using vector_type = _VEC;
+		using value_type = typename vector_type::value_type;
+		using lower_rank = TFrame<typename vector_type::lower_rank>;
+
+		vector_type begin;
+		vector_type end;
+	};
+
+	using Rect = TFrame<Vector2>;
+	using AABB = TFrame<Vector3>;
 
 	template <typename _VEC>
 	struct TPolygon
@@ -79,6 +102,10 @@ namespace pphy
 	struct TRound
 	{
 		using vector_type = _VEC;
+		using segment_type = Segment<vector_type>;
+
+		inline constexpr bool is_point_inside( const vector_type &point ) const;
+		inline constexpr bool is_intersecting_segment( const vector_type &p0, const vector_type &p1, segment_type &intersection ) const;
 
 		vector_type center;
 		float radius;
@@ -103,6 +130,9 @@ namespace pphy
 	{
 		using vector_type = Vector2;
 
+		inline constexpr bool is_point_front( const Vector2 &vec ) const;
+		inline constexpr bool is_intersecting_segment( const Vector2 &p0, const Vector2 &p1, Vector2 &intersection ) const;
+
 		vector_type origin;
 		vector_type direction;
 	};
@@ -110,6 +140,9 @@ namespace pphy
 	struct Plane
 	{
 		using vector_type = Vector3;
+
+		inline constexpr bool is_point_front( const Vector3 &vec ) const;
+		inline constexpr bool is_intersecting_line( const Vector3 &p0, const Vector3 &p1 ) const;
 
 		vector_type origin;
 		vector_type normal;
@@ -120,14 +153,14 @@ namespace pphy
 	struct TRay
 	{
 		using vector_type = _T;
-		
+
 		vector_type origin;
 		vector_type extent;
 	};
 	using Ray2D = TRay<Vector2>;
 	using Ray3D = TRay<Vector3>;
 	using Ray4D = TRay<Vector4>;
-		
+
 	struct Shape2D
 	{
 	public:
@@ -137,6 +170,7 @@ namespace pphy
 
 	private:
 		shape_type_enum m_type;
+		Rect m_bounding_rect;
 		union ShapeUnion2D
 		{
 			~ShapeUnion2D();
@@ -148,7 +182,7 @@ namespace pphy
 			Ray2D ray;
 		} m_data;
 	};
-		
+
 	struct Shape3D
 	{
 	public:
@@ -158,6 +192,7 @@ namespace pphy
 
 	private:
 		shape_type_enum m_type;
+		AABB m_aabb;
 		union ShapeUnion3D
 		{
 			~ShapeUnion3D();
@@ -198,14 +233,16 @@ namespace pphy
 
 	private:
 		ObjectType m_type;
+		ObjectFlags m_flags;
 		vector_type m_position;
 		real_t m_angle;
 		vector_type m_linear_velocity;
 		vector_type m_angular_velocity;
 		real_t m_mass;
+		CollisionMask m_mask;
 
-		this_type *m_parent;
-		std::vector<this_type *> m_children;
+		index_t m_parent;
+		std::vector<index_t> m_children;
 
 		typename state_type::shape_type m_shape;
 		state_type m_state;
@@ -213,24 +250,77 @@ namespace pphy
 	using Object2D = TObject<ObjectState2D>;
 	using Object3D = TObject<ObjectState3D>;
 
+	using ObjectBatch = std::vector<index_t>;
+	using BatchResult = std::vector<ObjectBatch>;
+
+	namespace batchers
+	{
+
+		template <typename _OBJ>
+		class TBoundsBatcher
+		{
+		public:
+			using object_type = _OBJ;
+
+			inline const BatchResult &get_results() const {
+				return m_results;
+			}
+			
+			void try_rebuild( const std::vector<object_type> &objects );
+			void rebuild( const std::vector<object_type> &objects );
+
+		private:
+			BatchResult m_results;
+			real_t m_expand_margin = 0.25f;
+		};
+		using TBoundsBatcher2D = TBoundsBatcher<Object2D>;
+		using TBoundsBatcher3D = TBoundsBatcher<Object3D>;
+
+	}
+
 	template <typename _OBJ>
 	class TSpace
 	{
 	public:
 		using object_type = _OBJ;
+		using batcher_type = batchers::TBoundsBatcher<object_type>;
+		friend batcher_type;
 
-		TSpace(size_t objcount);
+		TSpace();
 
 	private:
-
-		const size_t m_space_size;
-		std::unique_ptr<object_type[]> m_objects;
+		batcher_type m_batcher;
+		std::vector<object_type> m_objects;
 	};
 	using Space2D = TSpace<Object2D>;
 	using Space3D = TSpace<Object3D>;
 
-	
+	template <typename _VEC>
+	inline constexpr bool TRound<_VEC>::is_point_inside( const vector_type &point ) const {
+		return (point - center).length_squared() <= radius;
+	}
 
-	
+	template<typename _VEC>
+	inline constexpr bool TRound<_VEC>::is_intersecting_segment( const vector_type &p0, const vector_type &p1, segment_type &intersection ) const {
+		return false;
+	}
+
+	inline constexpr bool Line::is_point_front( const Vector2 &vec ) const {
+		return direction.dot( vec - origin ) > 0;
+	}
+
+	inline constexpr bool Line::is_intersecting_segment( const Vector2 &p0, const Vector2 &p1, Vector2 &intersection ) const {
+		return false;
+	}
+
+	inline constexpr bool Plane::is_point_front( const Vector3 &vec ) const {
+		return normal.dot( vec - origin ) > 0;
+	}
+
+	inline constexpr bool Plane::is_intersecting_line( const Vector3 &p0, const Vector3 &p1 ) const {
+		(void)p0;
+		(void)p1;
+		return false;
+	}
 
 }
