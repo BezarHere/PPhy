@@ -64,9 +64,31 @@ namespace pphy
 	template <typename _VEC>
 	struct TFrame
 	{
+		using this_type = TFrame<_VEC>;
 		using vector_type = _VEC;
 		using value_type = typename vector_type::value_type;
 		using lower_rank = TFrame<typename vector_type::lower_rank>;
+
+		inline constexpr this_type intersects( const this_type &other ) const {
+			return other.end.x < begin.x || other.end.y < begin.y || other.begin.x > end.x || other.begin.y > end.y;
+		}
+
+		inline constexpr this_type expanded( value_type margin ) const {
+			return { begin.x - margin, begin.y - margin, end.x + margin, end.y + margin };
+		}
+
+		inline constexpr this_type encasing( const this_type &other ) const {
+			this_type copy = *this;
+			copy.encase( other );
+			return copy;
+		}
+
+		inline constexpr this_type encase( const this_type &other ) {
+			begin.x = std::min( begin.x, other.begin.x );
+			begin.y = std::min( begin.y, other.begin.y );
+			end.x = std::max( end.x, other.end.x );
+			end.y = std::max( end.y, other.end.y );
+		}
 
 		vector_type begin;
 		vector_type end;
@@ -167,6 +189,9 @@ namespace pphy
 		using vector_type = Vector2;
 		using shape_type_enum = ShapeType2D;
 
+		inline Rect get_bounding_rect() const noexcept {
+			return m_bounding_rect;
+		}
 
 	private:
 		shape_type_enum m_type;
@@ -189,6 +214,9 @@ namespace pphy
 		using vector_type = Vector3;
 		using shape_type_enum = ShapeType3D;
 
+		inline AABB get_aabb() const noexcept {
+			return m_aabb;
+		}
 
 	private:
 		shape_type_enum m_type;
@@ -207,19 +235,14 @@ namespace pphy
 
 	struct ObjectState2D
 	{
-	public:
 		using vector_type = Vector2;
 		using shape_type = Shape2D;
-
-
 	};
 
 	struct ObjectState3D
 	{
-	public:
 		using vector_type = Vector3;
 		using shape_type = Shape3D;
-
 	};
 
 	template <typename _STATE>
@@ -228,8 +251,10 @@ namespace pphy
 	public:
 		using state_type = _STATE;
 		using vector_type = typename state_type::vector_type;
+		using frame_type = typename TFrame<vector_type>;
 		using this_type = TObject<_STATE>;
 
+		inline frame_type get_frame() const;
 
 	private:
 		ObjectType m_type;
@@ -245,7 +270,7 @@ namespace pphy
 		std::vector<index_t> m_children;
 
 		typename state_type::shape_type m_shape;
-		state_type m_state;
+		state_type m_state; // <- check if this is actually needed
 	};
 	using Object2D = TObject<ObjectState2D>;
 	using Object3D = TObject<ObjectState3D>;
@@ -261,20 +286,29 @@ namespace pphy
 		{
 		public:
 			using object_type = _OBJ;
+			using frame_type = typename object_type::frame_type;
+			TBoundsBatcher();
 
 			inline const BatchResult &get_results() const {
 				return m_results;
 			}
-			
-			void try_rebuild( const std::vector<object_type> &objects );
+
+			void invalidate();
+
+			inline void try_rebuild( const std::vector<object_type> &objects ) {
+				if (m_dirty)
+					rebuild( objects );
+			}
+
 			void rebuild( const std::vector<object_type> &objects );
 
 		private:
+			bool m_dirty = true;
 			BatchResult m_results;
 			real_t m_expand_margin = 0.25f;
 		};
-		using TBoundsBatcher2D = TBoundsBatcher<Object2D>;
-		using TBoundsBatcher3D = TBoundsBatcher<Object3D>;
+		using BoundsBatcher2D = TBoundsBatcher<Object2D>;
+		using BoundsBatcher3D = TBoundsBatcher<Object3D>;
 
 	}
 
@@ -288,12 +322,15 @@ namespace pphy
 
 		TSpace();
 
+		void update( real_t deltatime );
+
 	private:
 		batcher_type m_batcher;
 		std::vector<object_type> m_objects;
 	};
 	using Space2D = TSpace<Object2D>;
 	using Space3D = TSpace<Object3D>;
+
 
 	template <typename _VEC>
 	inline constexpr bool TRound<_VEC>::is_point_inside( const vector_type &point ) const {
@@ -321,6 +358,16 @@ namespace pphy
 		(void)p0;
 		(void)p1;
 		return false;
+	}
+
+	template<>
+	inline TObject<ObjectState2D>::frame_type TObject<ObjectState2D>::get_frame() const {
+		return m_shape.get_bounding_rect();
+	}
+
+	template<>
+	inline TObject<ObjectState3D>::frame_type TObject<ObjectState3D>::get_frame() const {
+		return m_shape.get_aabb();
 	}
 
 }
