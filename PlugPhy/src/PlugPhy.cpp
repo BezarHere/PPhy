@@ -40,6 +40,11 @@ namespace pphy
 			for (index_t i = 0; i < objects.size(); i++)
 			{
 				const object_type &obj = objects[ i ];
+				
+				// no need
+				if (!obj.is_enabled())
+					continue;
+
 				frames[ i ] = obj.get_frame().expanded( m_expand_margin );
 
 				bool found_group = false;
@@ -77,6 +82,8 @@ namespace pphy
 	void TSpace<_OBJ>::update( real_t deltatime ) {
 		m_batcher.try_rebuild( m_objects );
 		const BatchResult &b = m_batcher.get_results();
+
+
 
 	}
 

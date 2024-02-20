@@ -264,9 +264,22 @@ namespace pphy
 
 		inline frame_type get_frame() const;
 
+		inline void enable() {
+			m_enabled = true;
+		}
+
+		inline void disable() {
+			m_enabled = false;
+		}
+		
+		inline bool is_enabled() const {
+			return m_enabled;
+		}
+
 	private:
 		ObjectType m_type;
 		ObjectFlags m_flags;
+		bool m_enabled;
 		vector_type m_position;
 		real_t m_angle;
 		vector_type m_linear_velocity;
