@@ -69,13 +69,21 @@ namespace pphy
 		using value_type = typename vector_type::value_type;
 		using lower_rank = TFrame<typename vector_type::lower_rank>;
 
-		inline constexpr this_type intersects( const this_type &other ) const {
-			return other.end.x < begin.x || other.end.y < begin.y || other.begin.x > end.x || other.begin.y > end.y;
+		inline constexpr TFrame() : begin{}, end{} {
 		}
 
-		inline constexpr this_type expanded( value_type margin ) const {
-			return { begin.x - margin, begin.y - margin, end.x + margin, end.y + margin };
+		inline constexpr TFrame( const vector_type &begin_point, const vector_type &end_point )
+			: begin{ begin_point }, end{ end_point } {
 		}
+
+		// only defined for TFrame<Vector3> (e.g. AABB)
+		inline constexpr TFrame( value_type bx, value_type by, value_type bz, value_type ex, value_type ey, value_type ez );
+		// only defined for TFrame<Vector2> (e.g. Rect)
+		inline constexpr TFrame( value_type bx, value_type by, value_type ex, value_type ey );
+
+		inline constexpr bool intersects( const this_type &other ) const;
+
+		inline constexpr this_type expanded( value_type margin ) const;
 
 		inline constexpr this_type encasing( const this_type &other ) const {
 			this_type copy = *this;
@@ -83,7 +91,7 @@ namespace pphy
 			return copy;
 		}
 
-		inline constexpr this_type encase( const this_type &other ) {
+		inline constexpr void encase( const this_type &other ) {
 			begin.x = std::min( begin.x, other.begin.x );
 			begin.y = std::min( begin.y, other.begin.y );
 			end.x = std::max( end.x, other.end.x );
@@ -331,6 +339,35 @@ namespace pphy
 	using Space2D = TSpace<Object2D>;
 	using Space3D = TSpace<Object3D>;
 
+	template<>
+	inline constexpr TFrame<Vector3>::TFrame( value_type bx, value_type by, value_type bz, value_type ex, value_type ey, value_type ez )
+		: begin{ bx, by, bz }, end{ ex, ey, ez } {
+	}
+
+	template<>
+	inline constexpr TFrame<Vector2>::TFrame( value_type bx, value_type by, value_type ex, value_type ey )
+		: begin{ bx, by }, end{ ex, ey } {
+	}
+
+	template<>
+	inline constexpr bool TFrame<Vector2>::intersects( const this_type &other ) const {
+		return other.end.x < begin.x || other.end.y < begin.y || other.begin.x > end.x || other.begin.y > end.y;
+	}
+
+	template<>
+	inline constexpr bool TFrame<Vector3>::intersects( const this_type &other ) const {
+		return other.end.x < begin.x || other.end.y < begin.y || other.end.z < begin.z || other.begin.x > end.x || other.begin.y > end.y || other.begin.z > end.z;
+	}
+
+	template<>
+	inline constexpr TFrame<Vector2>::this_type TFrame<Vector2>::expanded( value_type margin ) const {
+		return { begin.x - margin, begin.y - margin , end.x + margin, end.y + margin };
+	}
+
+	template<>
+	inline constexpr TFrame<Vector3>::this_type TFrame<Vector3>::expanded( value_type margin ) const {
+		return { begin.x - margin, begin.y - margin, begin.z - margin, end.x + margin, end.y + margin, end.z + margin };
+	}
 
 	template <typename _VEC>
 	inline constexpr bool TRound<_VEC>::is_point_inside( const vector_type &point ) const {

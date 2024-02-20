@@ -86,7 +86,4 @@ namespace pphy
 	Shape3D::ShapeUnion3D::~ShapeUnion3D() {
 	}
 
-
-
-
 }
