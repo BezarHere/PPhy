@@ -42,7 +42,7 @@ namespace pphy
 				const object_type &obj = objects[ i ];
 				
 				// no need
-				if (!obj.is_enabled())
+				if (!obj.is_activated())
 					continue;
 
 				frames[ i ] = obj.get_frame().expanded( m_expand_margin );
