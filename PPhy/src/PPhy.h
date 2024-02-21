@@ -61,7 +61,7 @@ namespace pphy
 	enum ObjectFlags : uint16_t
 	{
 		ObjFlag_None = 0x0000,
-		ObjFlag_Clip = 0x0001,
+		ObjFlag_NeverSleeps = 0x0001,
 	};
 	using CollisionMask = uint32_t;
 
@@ -271,8 +271,9 @@ namespace pphy
 		Rect m_bounding_rect;
 		union ShapeUnion2D
 		{
-			~ShapeUnion2D();
 			ShapeUnion2D( const ShapeUnion2D &copy );
+			ShapeUnion2D &operator=( const ShapeUnion2D &other );
+			~ShapeUnion2D();
 
 			Polygon2D polygon;
 			Circle circle;
@@ -300,8 +301,9 @@ namespace pphy
 		AABB m_aabb;
 		union ShapeUnion3D
 		{
-			~ShapeUnion3D();
 			ShapeUnion3D( const ShapeUnion3D &copy );
+			ShapeUnion3D &operator=( const ShapeUnion3D &other );
+			~ShapeUnion3D();
 
 			Polygon3D polygon;
 			Sphere sphere;
@@ -332,34 +334,94 @@ namespace pphy
 		using vector_type = typename state_type::vector_type;
 		using frame_type = typename TFrame<vector_type>;
 		using this_type = TObject<_STATE>;
+		using shape_type = typename state_type::shape_type;
 
 		inline frame_type get_frame() const;
 
+		inline ObjectType get_type() const {
+			return m_type;
+		}
+
+		inline ObjectFlags get_flags() const {
+			return m_flags;
+		}
+
+		inline const vector_type &get_position() const {
+			return m_position;
+		}
+
+		inline real_t get_angle() const {
+			return m_angle;
+		}
+
+		inline real_t get_angular_velocity() const {
+			return m_angular_velocity;
+		}
+
+		inline const vector_type &get_linear_velocity() const {
+			return m_position;
+		}
+
+		inline real_t get_mass() const {
+			return m_mass;
+		}
+
+		void set_position( const vector_type &value );
+		void set_angle( real_t value );
+		void set_angular_velocity( real_t value );
+		void set_linear_velocity( const vector_type &value );
+
 		inline void activate() {
+			wakeup();
 			m_active = true;
 		}
 
 		inline void deactivate() {
 			m_active = false;
 		}
-		
+
 		inline bool is_activated() const {
 			return m_active;
 		}
 
+		inline CollisionMask get_mask() const {
+			return m_mask;
+		}
+
+		void set_mask( CollisionMask mask );
+
+		inline void wakeup() {
+			m_awake = true;
+		}
+
+		inline bool is_awake() const {
+			return m_awake;
+		}
+
+		inline bool is_always_awake() const {
+			return m_flags & ObjFlag_NeverSleeps;
+		}
+
+		inline const shape_type &get_shape() const {
+			return m_shape;
+		}
+
+		void set_shape( const shape_type &shape );
+
 	private:
 		ObjectType m_type;
 		ObjectFlags m_flags;
+		bool m_awake;
 		bool m_active;
 		vector_type m_position;
 		real_t m_angle;
 		vector_type m_linear_velocity;
-		vector_type m_angular_velocity;
+		real_t m_angular_velocity;
 		real_t m_mass;
 		CollisionMask m_mask;
 
-		typename state_type::shape_type m_shape;
-		state_type m_state; // <- check if this is actually needed
+		shape_type m_shape;
+		//state_type m_state; // <- might remove later if not needed
 	};
 	using Object2D = TObject<ObjectState2D>;
 	using Object3D = TObject<ObjectState3D>;
@@ -415,7 +477,7 @@ namespace pphy
 
 		/// @brief adds the object to the object list
 		/// @note will invalidate batcher which in turn is pretty expensive
-		void add_object(const object_type &object);
+		void add_object( const object_type &object );
 		inline const object_type &get_object( index_t index ) const {
 			return m_objects[ index ];
 		}
@@ -543,6 +605,6 @@ namespace pphy
 		return m_shape.get_aabb();
 	}
 
-	
+
 #pragma endregion
 }

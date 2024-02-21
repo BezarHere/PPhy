@@ -110,6 +110,7 @@ namespace pphy
 				if (!obj.is_activated())
 					continue;
 
+				//?? msvc++ be like 'BufFeR OveRruN wHilE WRiTinG tO 'frames'.'
 				frames[ i ] = obj.get_frame().expanded( m_expand_margin );
 
 				bool found_group = false;
@@ -139,7 +140,7 @@ namespace pphy
 	}
 
 	template<typename _VEC>
-	inline void TPolygon<_VEC>::update() {
+	void TPolygon<_VEC>::update() {
 		m_dirty = false;
 		if (m_points.size() < 3)
 		{
@@ -169,6 +170,43 @@ namespace pphy
 
 	}
 
+	template<typename _STATE>
+	void TObject<_STATE>::set_position( const vector_type &value ) {
+		m_position = value;
+		wakeup();
+	}
+
+	template<typename _STATE>
+	void TObject<_STATE>::set_angle( real_t value ) {
+		m_angle = value;
+		wakeup();
+	}
+
+	template<typename _STATE>
+	void TObject<_STATE>::set_angular_velocity( real_t value ) {
+		m_angular_velocity = value;
+		wakeup();
+	}
+
+	template<typename _STATE>
+	void TObject<_STATE>::set_linear_velocity( const vector_type &value ) {
+		m_linear_velocity = value;
+		wakeup();
+	}
+
+	template<typename _STATE>
+	void TObject<_STATE>::set_mask( const CollisionMask mask ) {
+		m_mask = mask;
+		wakeup();
+	}
+
+	template<typename _STATE>
+	void TObject<_STATE>::set_shape( const shape_type &shape ) {
+		m_shape = shape;
+		m_shape.recalculate_bounding_box();
+		wakeup();
+	}
+
 	template<typename _OBJ>
 	TSpace<_OBJ>::TSpace() {
 	}
@@ -191,17 +229,33 @@ namespace pphy
 		m_batcher.invalidate();
 	}
 
+#pragma region(ShapeUnion)
 	Shape2D::ShapeUnion2D::~ShapeUnion2D() {
 	}
 
+	// FIXME: why the polygon??
 	Shape2D::ShapeUnion2D::ShapeUnion2D( const ShapeUnion2D &copy ) : polygon{copy.polygon} {
+	}
+
+	Shape2D::ShapeUnion2D &Shape2D::ShapeUnion2D::operator=( const ShapeUnion2D &other ) {
+		// FIXME: why the polygon??
+		polygon = other.polygon;
+		return *this;
 	}
 
 	Shape3D::ShapeUnion3D::~ShapeUnion3D() {
 	}
 
+	// FIXME: why the polygon??
 	Shape3D::ShapeUnion3D::ShapeUnion3D( const ShapeUnion3D &copy ) : polygon{ copy.polygon } {
 	}
+
+	Shape3D::ShapeUnion3D &Shape3D::ShapeUnion3D::operator=( const ShapeUnion3D &other ) {
+		// FIXME: why the polygon??
+		polygon = other.polygon;
+		return *this;
+	}
+#pragma endregion
 
 	void Shape2D::recalculate_bounding_box() {
 		switch (m_type)
