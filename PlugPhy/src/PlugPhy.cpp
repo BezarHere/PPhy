@@ -87,10 +87,22 @@ namespace pphy
 
 	}
 
+	template<typename _OBJ>
+	void TSpace<_OBJ>::add_object( const object_type &object ) {
+		m_objects.push_back( object );
+		m_batcher.invalidate();
+	}
+
 	Shape2D::ShapeUnion2D::~ShapeUnion2D() {
 	}
 
 	Shape3D::ShapeUnion3D::~ShapeUnion3D() {
+	}
+
+	void Shape2D::recalculate_bounding_box() {
+	}
+
+	void Shape3D::recalculate_bounding_box() {
 	}
 
 }
