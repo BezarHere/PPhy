@@ -96,7 +96,13 @@ namespace pphy
 	Shape2D::ShapeUnion2D::~ShapeUnion2D() {
 	}
 
+	Shape2D::ShapeUnion2D::ShapeUnion2D( const ShapeUnion2D &copy ) {
+	}
+
 	Shape3D::ShapeUnion3D::~ShapeUnion3D() {
+	}
+
+	Shape3D::ShapeUnion3D::ShapeUnion3D( const ShapeUnion3D &copy ) {
 	}
 
 	void Shape2D::recalculate_bounding_box() {

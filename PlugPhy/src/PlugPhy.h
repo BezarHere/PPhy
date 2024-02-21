@@ -249,6 +249,7 @@ namespace pphy
 		union ShapeUnion2D
 		{
 			~ShapeUnion2D();
+			ShapeUnion2D( const ShapeUnion2D &copy );
 
 			Polygon2D polygon;
 			Circle circle;
@@ -278,6 +279,7 @@ namespace pphy
 		union ShapeUnion3D
 		{
 			~ShapeUnion3D();
+			ShapeUnion3D( const ShapeUnion3D &copy );
 
 			Polygon3D polygon;
 			Sphere sphere;
