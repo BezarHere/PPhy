@@ -106,7 +106,7 @@ namespace pphy
 	using AABB = TFrame<Vector3>;
 
 	template <typename _VEC>
-	struct TPolygon
+	class TPolygon
 	{
 	public:
 		using vector_type = _VEC;
@@ -197,9 +197,51 @@ namespace pphy
 		using vector_type = Vector2;
 		using shape_type_enum = ShapeType2D;
 
+		inline const Polygon2D &get_polygon() const noexcept {
+			return m_data.polygon;
+		}
+
+		inline Polygon2D &get_polygon() noexcept {
+			return m_data.polygon;
+		}
+
+		inline const Circle &get_circle() const noexcept {
+			return m_data.circle;
+		}
+
+		inline Circle &get_circle() noexcept {
+			return m_data.circle;
+		}
+
+		inline const Triangle &get_triangle() const noexcept {
+			return m_data.triangle;
+		}
+
+		inline Triangle &get_triangle() noexcept {
+			return m_data.triangle;
+		}
+
+		inline const Line &get_line() const noexcept {
+			return m_data.line;
+		}
+
+		inline Line &get_line() noexcept {
+			return m_data.line;
+		}
+
+		inline const Ray2D &get_ray() const noexcept {
+			return m_data.ray;
+		}
+
+		inline Ray2D &get_ray() noexcept {
+			return m_data.ray;
+		}
+
 		inline Rect get_bounding_rect() const noexcept {
 			return m_bounding_rect;
 		}
+
+		void recalculate_bounding_box();
 
 	private:
 		shape_type_enum m_type;
@@ -222,9 +264,13 @@ namespace pphy
 		using vector_type = Vector3;
 		using shape_type_enum = ShapeType3D;
 
+		inline const Polygon3D &get_polygon();
+
 		inline AABB get_aabb() const noexcept {
 			return m_aabb;
 		}
+
+		void recalculate_bounding_box();
 
 	private:
 		shape_type_enum m_type;
@@ -285,7 +331,7 @@ namespace pphy
 		vector_type m_linear_velocity;
 		vector_type m_angular_velocity;
 		real_t m_mass;
-		CollisionMask m_mask;;
+		CollisionMask m_mask;
 
 		typename state_type::shape_type m_shape;
 		state_type m_state; // <- check if this is actually needed
@@ -341,6 +387,17 @@ namespace pphy
 		TSpace();
 
 		void update( real_t deltatime );
+
+		/// @brief adds the object to the object list
+		/// @note will invalidate batcher which in turn is pretty expensive
+		void add_object(const object_type &object);
+		inline const object_type &get_object( index_t index ) const {
+			return m_objects[ index ];
+		}
+
+		inline object_type &get_object( index_t index ) {
+			return m_objects[ index ];
+		}
 
 	private:
 		batcher_type m_batcher;
