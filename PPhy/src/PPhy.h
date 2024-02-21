@@ -348,7 +348,7 @@ namespace pphy
 		using shape_type = typename state_type::shape_type;
 		using shape_type_enum = typename shape_type::shape_type_enum;
 
-		TObject( ObjectType type, shape_type_enum shape_type );
+		TObject( ObjectType type, shape_type_enum shape_type = shape_type_enum::None );
 
 		inline frame_type get_frame() const;
 
@@ -501,6 +501,10 @@ namespace pphy
 		}
 
 	private:
+		void update( const ObjectBatch &objects );
+
+	private:
+		real_t m_dt;
 		batcher_type m_batcher;
 		std::vector<object_type> m_objects;
 	};

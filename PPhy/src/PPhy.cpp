@@ -2,6 +2,15 @@
 #include "pphy.h"
 using namespace pphy;
 
+constexpr real_t Epsilon =
+#ifdef PPHY_HIPREC
+1.0E-9;
+#else
+1.0E-4;
+#endif
+;;;;;;;;;;;;
+
+
 template Space2D;
 template Space3D;
 template Object2D;
@@ -218,14 +227,40 @@ namespace pphy
 
 	template<typename _OBJ>
 	void TSpace<_OBJ>::update( real_t deltatime ) {
-		(void)deltatime;
+		if (deltatime - Epsilon <= 0)
+			deltatime = Epsilon;
+
+		m_dt = deltatime;
 
 		m_batcher.try_rebuild( m_objects );
 		const BatchResult &batch_results = m_batcher.get_results();
 		(void)batch_results;
 
-		// do the solving...
+		for (const ObjectBatch &batch : batch_results)
+		{
+			update( batch );
+		}
 
+	}
+
+	template<typename _OBJ>
+	void TSpace<_OBJ>::update( const ObjectBatch &objects ) {
+		for (size_t i = 0; i < objects.size(); i++)
+		{
+			object_type &object_a = m_objects[ objects[ i ] ];
+			for (index_t j = i + 1; j < objects.size(); j++)
+			{
+				object_type &object_b = m_objects[ objects[ j ] ];
+
+				// bounding boxes not intersecting, objects can't be colliding
+				if (!object_a.get_frame().intersects( object_b.get_frame() ))
+				{
+					continue;
+				}
+
+				// DO SOLVER STUFF
+			}
+		}
 	}
 
 	template<typename _OBJ>
