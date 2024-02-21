@@ -171,6 +171,11 @@ namespace pphy
 	}
 
 	template<typename _STATE>
+	TObject<_STATE>::TObject( ObjectType type, shape_type_enum shape_type ) : m_type{ type }, m_shape{ shape_type } {
+
+	}
+
+	template<typename _STATE>
 	void TObject<_STATE>::set_position( const vector_type &value ) {
 		m_position = value;
 		wakeup();
@@ -230,11 +235,17 @@ namespace pphy
 	}
 
 #pragma region(ShapeUnion)
-	Shape2D::ShapeUnion2D::~ShapeUnion2D() {
-	}
 
 	// FIXME: why the polygon??
-	Shape2D::ShapeUnion2D::ShapeUnion2D( const ShapeUnion2D &copy ) : polygon{copy.polygon} {
+	Shape2D::ShapeUnion2D::ShapeUnion2D( shape_type_enum type ) : polygon{} {
+		(void)type;
+		// FIXME: use 'type'
+	}
+
+	Shape2D::ShapeUnion2D::ShapeUnion2D( const ShapeUnion2D &copy ) : polygon{ copy.polygon } {
+	}
+
+	Shape2D::ShapeUnion2D::~ShapeUnion2D() {
 	}
 
 	Shape2D::ShapeUnion2D &Shape2D::ShapeUnion2D::operator=( const ShapeUnion2D &other ) {
@@ -243,11 +254,16 @@ namespace pphy
 		return *this;
 	}
 
-	Shape3D::ShapeUnion3D::~ShapeUnion3D() {
+	Shape3D::ShapeUnion3D::ShapeUnion3D( shape_type_enum type ) : polygon{} {
+		(void)type;
+		// FIXME: use 'type'
 	}
 
 	// FIXME: why the polygon??
 	Shape3D::ShapeUnion3D::ShapeUnion3D( const ShapeUnion3D &copy ) : polygon{ copy.polygon } {
+	}
+
+	Shape3D::ShapeUnion3D::~ShapeUnion3D() {
 	}
 
 	Shape3D::ShapeUnion3D &Shape3D::ShapeUnion3D::operator=( const ShapeUnion3D &other ) {
@@ -256,6 +272,12 @@ namespace pphy
 		return *this;
 	}
 #pragma endregion
+
+	Shape2D::Shape2D() : m_data{ ShapeType2D::Rectangle } {
+	}
+
+	Shape2D::Shape2D( shape_type_enum type ) : m_data{ type } {
+	}
 
 	void Shape2D::recalculate_bounding_box() {
 		switch (m_type)
@@ -282,6 +304,12 @@ namespace pphy
 			m_bounding_rect = { 0, 0, 0, 0 };
 			break;
 		}
+	}
+
+	Shape3D::Shape3D() : m_data{ ShapeType3D::Box } {
+	}
+
+	Shape3D::Shape3D( shape_type_enum type ) : m_data{ type } {
 	}
 
 	void Shape3D::recalculate_bounding_box() {

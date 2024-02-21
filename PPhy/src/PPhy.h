@@ -22,6 +22,7 @@ namespace pphy
 
 	enum class ShapeType2D
 	{
+		None,
 		Rectangle,
 		Circle,
 		Triangle,
@@ -32,6 +33,7 @@ namespace pphy
 
 	enum class ShapeType3D
 	{
+		None,
 		Box,
 		Sphere,
 		Pyramid,
@@ -212,6 +214,9 @@ namespace pphy
 		using vector_type = Vector2;
 		using shape_type_enum = ShapeType2D;
 
+		Shape2D();
+		Shape2D( shape_type_enum type );
+
 		inline const Rect &get_rectangle() const noexcept {
 			return m_data.rectangle;
 		}
@@ -271,6 +276,7 @@ namespace pphy
 		Rect m_bounding_rect;
 		union ShapeUnion2D
 		{
+			ShapeUnion2D( shape_type_enum type );
 			ShapeUnion2D( const ShapeUnion2D &copy );
 			ShapeUnion2D &operator=( const ShapeUnion2D &other );
 			~ShapeUnion2D();
@@ -290,6 +296,10 @@ namespace pphy
 		using vector_type = Vector3;
 		using shape_type_enum = ShapeType3D;
 
+
+		Shape3D();
+		Shape3D( shape_type_enum type );
+
 		inline AABB get_aabb() const noexcept {
 			return m_aabb;
 		}
@@ -301,6 +311,7 @@ namespace pphy
 		AABB m_aabb;
 		union ShapeUnion3D
 		{
+			ShapeUnion3D( shape_type_enum type );
 			ShapeUnion3D( const ShapeUnion3D &copy );
 			ShapeUnion3D &operator=( const ShapeUnion3D &other );
 			~ShapeUnion3D();
@@ -335,6 +346,9 @@ namespace pphy
 		using frame_type = typename TFrame<vector_type>;
 		using this_type = TObject<_STATE>;
 		using shape_type = typename state_type::shape_type;
+		using shape_type_enum = typename shape_type::shape_type_enum;
+
+		TObject( ObjectType type, shape_type_enum shape_type );
 
 		inline frame_type get_frame() const;
 
