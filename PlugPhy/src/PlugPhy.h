@@ -285,10 +285,7 @@ namespace pphy
 		vector_type m_linear_velocity;
 		vector_type m_angular_velocity;
 		real_t m_mass;
-		CollisionMask m_mask;
-
-		index_t m_parent;
-		std::vector<index_t> m_children;
+		CollisionMask m_mask;;
 
 		typename state_type::shape_type m_shape;
 		state_type m_state; // <- check if this is actually needed
