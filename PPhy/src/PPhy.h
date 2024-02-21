@@ -289,8 +289,6 @@ namespace pphy
 		using vector_type = Vector3;
 		using shape_type_enum = ShapeType3D;
 
-		inline const Polygon3D &get_polygon();
-
 		inline AABB get_aabb() const noexcept {
 			return m_aabb;
 		}
@@ -433,6 +431,8 @@ namespace pphy
 	using Space2D = TSpace<Object2D>;
 	using Space3D = TSpace<Object3D>;
 
+#pragma region(Definitions)
+
 	template<>
 	inline constexpr TFrame<Vector3>::TFrame( value_type bx, value_type by, value_type bz, value_type ex, value_type ey, value_type ez )
 		: begin{ bx, by, bz }, end{ ex, ey, ez } {
@@ -544,5 +544,5 @@ namespace pphy
 	}
 
 	
-
+#pragma endregion
 }
