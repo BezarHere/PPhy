@@ -7,6 +7,71 @@ template Space3D;
 template Object2D;
 template Object3D;
 
+inline static Rect calculate_bounding_box( const Polygon2D &polygon ) {
+	return polygon.get_bounds();
+}
+
+inline static Rect calculate_bounding_box( const Circle &circle ) {
+	return {
+		circle.center.x - circle.radius, circle.center.y - circle.radius,
+		circle.center.x + circle.radius, circle.center.y + circle.radius
+	};
+}
+
+inline static Rect calculate_bounding_box( const Rect &rect ) {
+	return rect;
+}
+
+inline static Rect calculate_bounding_box( const Triangle &triangle ) {
+	const Vector2 base_extent = triangle.head_extent.normalized().tangent();
+	return {
+		std::min( { base_extent.x, -base_extent.x, triangle.head_extent.x } ) + triangle.base.x,
+		std::min( { base_extent.y, -base_extent.y, triangle.head_extent.y } ) + triangle.base.y,
+		std::max( { base_extent.x, -base_extent.x, triangle.head_extent.x } ) + triangle.base.x,
+		std::max( { base_extent.y, -base_extent.y, triangle.head_extent.y } ) + triangle.base.y
+	};
+}
+
+inline static Rect calculate_bounding_box( const Line &line ) {
+	return {
+		line.direction.x < 0 ? -HUGE_VALF : line.origin.x,
+		line.direction.y < 0 ? -HUGE_VALF : line.origin.y,
+		line.direction.x > 0 ? HUGE_VALF : line.origin.x,
+		line.direction.y > 0 ? HUGE_VALF : line.origin.y
+	};
+}
+
+inline static Rect calculate_bounding_box( const Ray2D &ray ) {
+	return {
+		std::min<real_t>( 0, ray.extent.x ) + ray.origin.x,
+		std::min<real_t>( 0, ray.extent.y ) + ray.origin.y,
+		std::max<real_t>( 0, ray.extent.x ) + ray.origin.x,
+		std::max<real_t>( 0, ray.extent.y ) + ray.origin.y
+	};
+}
+
+// author: ??? (heavily modified by me)
+inline static bool is_clockwise( const Vector2 *const points, const size_t count ) {
+	real_t turn_factor{};
+
+	//if (count < 3)
+	//	return true;
+
+	for (size_t i{}; i < count - 1; i++)
+	{
+		turn_factor += (points[ i ].x - points[ i + 1 ].x) * (points[ i ].y + points[ i + 1 ].y);
+	}
+
+	return turn_factor > -(points[ count - 1 ].x - points[ 0 ].x) * (points[ count - 1 ].y + points[ 0 ].y);
+}
+
+inline static bool is_clockwise( const Vector3 *const points, const size_t count ) {
+	(void)count;
+	(void)points;
+	// FIXME: how should this be calculated
+	return false;
+}
+
 namespace pphy
 {
 	namespace batchers
@@ -40,7 +105,7 @@ namespace pphy
 			for (index_t i = 0; i < objects.size(); i++)
 			{
 				const object_type &obj = objects[ i ];
-				
+
 				// no need
 				if (!obj.is_activated())
 					continue;
@@ -73,6 +138,36 @@ namespace pphy
 		}
 	}
 
+	template<typename _VEC>
+	inline void TPolygon<_VEC>::update() {
+		m_dirty = false;
+		if (m_points.size() < 3)
+		{
+			m_winding = Winding::None;
+
+		}
+		else
+		{
+			m_winding =
+				is_clockwise( m_points.data(), m_points.size() ) ? Winding::Clockwise : Winding::CounterClockwise;
+		}
+
+		m_center = {};
+
+		if (m_points.empty())
+			return;
+
+		m_bounds = { m_points[ 0 ], m_points[ 0 ] };
+
+
+		for (index_t i = 0; i < m_points.size(); i++)
+		{
+			m_center += m_points[ i ];
+			m_bounds.encase( m_points[ i ] );
+		}
+		m_center /= static_cast<real_t>(m_points.size());
+
+	}
 
 	template<typename _OBJ>
 	TSpace<_OBJ>::TSpace() {
@@ -80,10 +175,13 @@ namespace pphy
 
 	template<typename _OBJ>
 	void TSpace<_OBJ>::update( real_t deltatime ) {
+		(void)deltatime;
+
 		m_batcher.try_rebuild( m_objects );
-		const BatchResult &b = m_batcher.get_results();
+		const BatchResult &batch_results = m_batcher.get_results();
+		(void)batch_results;
 
-
+		// do the solving...
 
 	}
 
@@ -96,16 +194,40 @@ namespace pphy
 	Shape2D::ShapeUnion2D::~ShapeUnion2D() {
 	}
 
-	Shape2D::ShapeUnion2D::ShapeUnion2D( const ShapeUnion2D &copy ) {
+	Shape2D::ShapeUnion2D::ShapeUnion2D( const ShapeUnion2D &copy ) : polygon{copy.polygon} {
 	}
 
 	Shape3D::ShapeUnion3D::~ShapeUnion3D() {
 	}
 
-	Shape3D::ShapeUnion3D::ShapeUnion3D( const ShapeUnion3D &copy ) {
+	Shape3D::ShapeUnion3D::ShapeUnion3D( const ShapeUnion3D &copy ) : polygon{ copy.polygon } {
 	}
 
 	void Shape2D::recalculate_bounding_box() {
+		switch (m_type)
+		{
+		case ShapeType2D::Polygon:
+			m_bounding_rect = calculate_bounding_box( m_data.polygon );
+			return;
+		case ShapeType2D::Circle:
+			m_bounding_rect = calculate_bounding_box( m_data.circle );
+			return;
+		case ShapeType2D::Triangle:
+			m_bounding_rect = calculate_bounding_box( m_data.triangle );
+			return;
+		case ShapeType2D::Rectangle:
+			m_bounding_rect = calculate_bounding_box( m_data.rectangle );
+			return;
+		case ShapeType2D::Line:
+			m_bounding_rect = calculate_bounding_box( m_data.line );
+			return;
+		case ShapeType2D::Ray:
+			m_bounding_rect = calculate_bounding_box( m_data.ray );
+			return;
+		default:
+			m_bounding_rect = { 0, 0, 0, 0 };
+			break;
+		}
 	}
 
 	void Shape3D::recalculate_bounding_box() {

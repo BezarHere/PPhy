@@ -15,25 +15,29 @@ namespace pphy
 {
 	typedef size_t index_t;
 	typedef size_t hash_t;
+
+	// mathematically called 'pair of points'
 	template <typename _T>
 	using Segment = std::pair<_T, _T>;
 
 	enum class ShapeType2D
 	{
+		Rectangle,
 		Circle,
 		Triangle,
-		Rectangle,
 		Line,
 		Ray,
+		Polygon,
 	};
 
 	enum class ShapeType3D
 	{
+		Box,
 		Sphere,
 		Pyramid,
-		Box,
 		Plane,
-		Ray
+		Ray,
+		Polygon,
 	};
 
 	enum class ObjectType
@@ -91,12 +95,8 @@ namespace pphy
 			return copy;
 		}
 
-		inline constexpr void encase( const this_type &other ) {
-			begin.x = std::min( begin.x, other.begin.x );
-			begin.y = std::min( begin.y, other.begin.y );
-			end.x = std::max( end.x, other.end.x );
-			end.y = std::max( end.y, other.end.y );
-		}
+		inline constexpr void encase( const this_type &other );
+		inline constexpr void encase( const vector_type &point );
 
 		vector_type begin;
 		vector_type end;
@@ -110,19 +110,32 @@ namespace pphy
 	{
 	public:
 		using vector_type = _VEC;
+		using frame_type = TFrame<vector_type>;
 
 		inline vector_type get_center() const {
 			return m_center;
 		}
 
 		inline Winding get_winding() const {
-			return m_cw;
+			return m_winding;
 		}
 
+		inline const frame_type &get_bounds() const {
+			return m_bounds;
+		}
+
+		inline void try_update() {
+			if (m_dirty)
+				update();
+		}
+		inline void update();
+
 	private:
+		bool m_dirty;
 		vector_type m_center;
+		frame_type m_bounds;
+		Winding m_winding;
 		std::vector<vector_type> m_points;
-		Winding m_cw;
 	};
 	using Polygon2D = TPolygon<Vector2>;
 	using Polygon3D = TPolygon<Vector3>;
@@ -156,6 +169,7 @@ namespace pphy
 	using Triangle = TPointy<Vector2>;
 	using Pyramid = TPointy<Vector3>;
 
+	// mathematically called 'ray'
 	struct Line
 	{
 		using vector_type = Vector2;
@@ -179,6 +193,7 @@ namespace pphy
 		vector_type::lower_rank size;
 	};
 
+	// mathematically called 'segment'
 	template <typename _T>
 	struct TRay
 	{
@@ -196,6 +211,14 @@ namespace pphy
 	public:
 		using vector_type = Vector2;
 		using shape_type_enum = ShapeType2D;
+
+		inline const Rect &get_rectangle() const noexcept {
+			return m_data.rectangle;
+		}
+
+		inline Rect &get_rectangle() noexcept {
+			return m_data.rectangle;
+		}
 
 		inline const Polygon2D &get_polygon() const noexcept {
 			return m_data.polygon;
@@ -256,6 +279,7 @@ namespace pphy
 			Triangle triangle;
 			Line line;
 			Ray2D ray;
+			Rect rectangle;
 		} m_data;
 	};
 
@@ -286,6 +310,7 @@ namespace pphy
 			Pyramid pyramid;
 			Plane plane;
 			Ray3D ray;
+			AABB box;
 		} m_data;
 	};
 
@@ -438,6 +463,42 @@ namespace pphy
 		return { begin.x - margin, begin.y - margin, begin.z - margin, end.x + margin, end.y + margin, end.z + margin };
 	}
 
+	template<>
+	inline constexpr void TFrame<Vector2>::encase( const this_type &other ) {
+		begin.x = std::min( begin.x, other.begin.x );
+		begin.y = std::min( begin.y, other.begin.y );
+		end.x = std::max( end.x, other.end.x );
+		end.y = std::max( end.y, other.end.y );
+	}
+
+	template<>
+	inline constexpr void TFrame<Vector3>::encase( const this_type &other ) {
+		begin.x = std::min( begin.x, other.begin.x );
+		begin.y = std::min( begin.y, other.begin.y );
+		begin.z = std::min( begin.z, other.begin.z );
+		end.x = std::max( end.x, other.end.x );
+		end.y = std::max( end.y, other.end.y );
+		end.z = std::max( end.z, other.end.z );
+	}
+
+	template<>
+	inline constexpr void TFrame<Vector2>::encase( const vector_type &other ) {
+		begin.x = std::min( begin.x, other.x );
+		begin.y = std::min( begin.y, other.y );
+		end.x = std::max( end.x, other.x );
+		end.y = std::max( end.y, other.y );
+	}
+
+	template<>
+	inline constexpr void TFrame<Vector3>::encase( const vector_type &other ) {
+		begin.x = std::min( begin.x, other.x );
+		begin.y = std::min( begin.y, other.y );
+		begin.z = std::min( begin.z, other.z );
+		end.x = std::max( end.x, other.x );
+		end.y = std::max( end.y, other.y );
+		end.z = std::max( end.z, other.z );
+	}
+
 	template <typename _VEC>
 	inline constexpr bool TRound<_VEC>::is_point_inside( const vector_type &point ) const {
 		return (point - center).length_squared() <= radius;
@@ -445,6 +506,9 @@ namespace pphy
 
 	template<typename _VEC>
 	inline constexpr bool TRound<_VEC>::is_intersecting_segment( const vector_type &p0, const vector_type &p1, segment_type &intersection ) const {
+		(void)p0;
+		(void)p1;
+		(void)intersection;
 		return false;
 	}
 
@@ -453,6 +517,9 @@ namespace pphy
 	}
 
 	inline constexpr bool Line::is_intersecting_segment( const Vector2 &p0, const Vector2 &p1, Vector2 &intersection ) const {
+		(void)p0;
+		(void)p1;
+		(void)intersection;
 		return false;
 	}
 
@@ -475,5 +542,7 @@ namespace pphy
 	inline TObject<ObjectState3D>::frame_type TObject<ObjectState3D>::get_frame() const {
 		return m_shape.get_aabb();
 	}
+
+	
 
 }
