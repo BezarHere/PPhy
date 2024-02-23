@@ -44,9 +44,10 @@ namespace pphy
 
 	enum class ObjectType
 	{
-		World, // <- baked static body
-		Terrain = World,
+		// static objects are immovable by the physics
+		// static objects can't detect other static objects for performance reasons
 		Static,
+		Clip, // <- like static but can detect collisions from all other types
 		Charecter,
 		Rigid,
 		Soft
@@ -126,11 +127,11 @@ namespace pphy
 			return m_bounds;
 		}
 
-		inline void try_update() {
+		inline void try_recalculate() {
 			if (m_dirty)
-				update();
+				recalculate();
 		}
-		inline void update();
+		inline void recalculate();
 
 	private:
 		bool m_dirty;
@@ -269,6 +270,10 @@ namespace pphy
 			return m_bounding_rect;
 		}
 
+		inline ShapeType2D get_type() const noexcept {
+			return m_type;
+		}
+
 		void recalculate_bounding_box();
 
 	private:
@@ -302,6 +307,10 @@ namespace pphy
 
 		inline AABB get_aabb() const noexcept {
 			return m_aabb;
+		}
+
+		inline ShapeType3D get_type() const noexcept {
+			return m_type;
 		}
 
 		void recalculate_bounding_box();
@@ -347,10 +356,12 @@ namespace pphy
 		using this_type = TObject<_STATE>;
 		using shape_type = typename state_type::shape_type;
 		using shape_type_enum = typename shape_type::shape_type_enum;
+		using shapes_container = std::vector<shape_type>;
 
-		TObject( ObjectType type, shape_type_enum shape_type = shape_type_enum::None );
+		TObject( ObjectType type );
 
 		inline frame_type get_frame() const;
+		inline frame_type get_shape_frame( index_t shape_index ) const;
 
 		inline ObjectType get_type() const {
 			return m_type;
@@ -416,11 +427,40 @@ namespace pphy
 			return m_flags & ObjFlag_NeverSleeps;
 		}
 
+		inline const shapes_container &get_shapes() const {
+			return m_shapes;
+		}
+
+		inline shape_type &get_shape() {
+			return m_shapes[ 0 ];
+		}
+
+		inline shape_type &get_shape( const index_t index ) {
+			return m_shapes[ index ];
+		}
+
 		inline const shape_type &get_shape() const {
-			return m_shape;
+			return m_shapes[ 0 ];
+		}
+
+		inline const shape_type &get_shape( const index_t index ) const {
+			return m_shapes[ index ];
 		}
 
 		void set_shape( const shape_type &shape );
+		void set_shape( const shape_type &shape, index_t index );
+		void add_shape( const shape_type &shape );
+		void remove_shape( index_t index );
+
+		inline bool is_frame_dirty() const noexcept {
+			return m_frame_dirty;
+		}
+
+		inline void invalidate_frame() {
+			m_frame_dirty = true;
+		}
+
+		void recalculate_frame();
 
 	private:
 		ObjectType m_type;
@@ -434,8 +474,9 @@ namespace pphy
 		real_t m_mass;
 		CollisionMask m_mask;
 
-		shape_type m_shape;
-		//state_type m_state; // <- might remove later if not needed
+		frame_type m_frame;
+		bool m_frame_dirty = true;
+		shapes_container m_shapes;
 	};
 	using Object2D = TObject<ObjectState2D>;
 	using Object3D = TObject<ObjectState3D>;
@@ -474,6 +515,38 @@ namespace pphy
 		};
 		using BoundsBatcher2D = TBoundsBatcher<Object2D>;
 		using BoundsBatcher3D = TBoundsBatcher<Object3D>;
+
+	}
+
+	namespace solvers
+	{
+		/*
+		Solvers are static classes with an object template
+		they also have a solve functions which:
+			has objects param
+			has shapes param (planning to use multi-shape objects later down the line)
+			returns weather there was a collision
+		*/
+
+		template <typename _OBJ>
+		class TIterative
+		{
+		public:
+			using object_type = _OBJ;
+			using shape_type = typename object_type::shape_type;
+			using shape_type_enum = typename object_type::shape_type_enum;
+			using object_type_enum = ObjectType;
+
+			using object_ref_pair = std::pair<object_type &, object_type &>;
+			using shape_ref_pair = std::pair<const shape_type &, const shape_type &>;
+
+			typedef bool(*SolverProc)(object_ref_pair, shape_ref_pair);
+
+			template<shape_type_enum ShapeTypeA, shape_type_enum ShapeTypeB>
+			static bool solve( object_ref_pair objects, shape_ref_pair shapes );
+
+		};
+		using Iterative2D = TIterative<Object2D>;
 
 	}
 
@@ -615,13 +688,24 @@ namespace pphy
 
 	template<>
 	inline TObject<ObjectState2D>::frame_type TObject<ObjectState2D>::get_frame() const {
-		return m_shape.get_bounding_rect();
+		return m_frame;
 	}
 
 	template<>
 	inline TObject<ObjectState3D>::frame_type TObject<ObjectState3D>::get_frame() const {
-		return m_shape.get_aabb();
+		return m_frame;
 	}
+
+	template<>
+	inline TObject<ObjectState2D>::frame_type TObject<ObjectState2D>::get_shape_frame( index_t shape_index ) const {
+		return m_shapes[ shape_index ].get_bounding_rect();
+	}
+
+	template<>
+	inline TObject<ObjectState3D>::frame_type TObject<ObjectState3D>::get_shape_frame( index_t shape_index ) const {
+		return m_shapes[ shape_index ].get_aabb();
+	}
+
 
 
 #pragma endregion
