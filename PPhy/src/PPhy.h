@@ -226,8 +226,8 @@ namespace pphy
 		}
 
 	protected:
-		shape_type_enum m_type;
-		frame_type m_bounding_box;
+		shape_type_enum m_type = shape_type_enum::None;
+		frame_type m_bounding_box = {};
 	};
 
 	struct Shape2D : public BaseShape<Vector2, ShapeType2D>
