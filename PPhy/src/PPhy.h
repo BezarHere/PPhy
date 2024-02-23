@@ -209,12 +209,30 @@ namespace pphy
 	using Ray3D = TRay<Vector3>;
 	using Ray4D = TRay<Vector4>;
 
-	struct Shape2D
+	template <typename _VEC, typename _TENUM>
+	struct BaseShape
 	{
 	public:
-		using vector_type = Vector2;
-		using shape_type_enum = ShapeType2D;
+		using vector_type = _VEC;
+		using shape_type_enum = _TENUM;
+		using frame_type = TFrame<vector_type>;
 
+		inline frame_type get_bounding_box() const noexcept {
+			return m_bounding_box;
+		}
+
+		inline shape_type_enum get_type() const noexcept {
+			return m_type;
+		}
+
+	protected:
+		shape_type_enum m_type;
+		frame_type m_bounding_box;
+	};
+
+	struct Shape2D : public BaseShape<Vector2, ShapeType2D>
+	{
+	public:
 		Shape2D();
 		Shape2D( shape_type_enum type );
 
@@ -266,19 +284,9 @@ namespace pphy
 			return m_data.ray;
 		}
 
-		inline Rect get_bounding_rect() const noexcept {
-			return m_bounding_rect;
-		}
-
-		inline ShapeType2D get_type() const noexcept {
-			return m_type;
-		}
-
 		void recalculate_bounding_box();
 
 	private:
-		shape_type_enum m_type;
-		Rect m_bounding_rect;
 		union ShapeUnion2D
 		{
 			ShapeUnion2D( shape_type_enum type );
@@ -295,29 +303,15 @@ namespace pphy
 		} m_data;
 	};
 
-	struct Shape3D
+	struct Shape3D : public BaseShape<Vector3, ShapeType3D>
 	{
 	public:
-		using vector_type = Vector3;
-		using shape_type_enum = ShapeType3D;
-
-
 		Shape3D();
 		Shape3D( shape_type_enum type );
-
-		inline AABB get_aabb() const noexcept {
-			return m_aabb;
-		}
-
-		inline ShapeType3D get_type() const noexcept {
-			return m_type;
-		}
 
 		void recalculate_bounding_box();
 
 	private:
-		shape_type_enum m_type;
-		AABB m_aabb;
 		union ShapeUnion3D
 		{
 			ShapeUnion3D( shape_type_enum type );
@@ -696,14 +690,9 @@ namespace pphy
 		return m_frame;
 	}
 
-	template<>
-	inline TObject<ObjectState2D>::frame_type TObject<ObjectState2D>::get_shape_frame( index_t shape_index ) const {
-		return m_shapes[ shape_index ].get_bounding_rect();
-	}
-
-	template<>
-	inline TObject<ObjectState3D>::frame_type TObject<ObjectState3D>::get_shape_frame( index_t shape_index ) const {
-		return m_shapes[ shape_index ].get_aabb();
+	template<typename _STATE>
+	inline typename TObject<_STATE>::frame_type TObject<_STATE>::get_shape_frame( index_t shape_index ) const {
+		return m_shapes[ shape_index ].get_bounding_box();
 	}
 
 
